@@ -42,7 +42,7 @@ There are two ways to try compiling a package which has been marked as broken.
 
 -   For allowing the build of a broken package once, you can use an environment variable for a single invocation of the nix tools:
 
-    ```shellSession
+    ```ShellSession
     $ export NIXPKGS_ALLOW_BROKEN=1
     ```
 
