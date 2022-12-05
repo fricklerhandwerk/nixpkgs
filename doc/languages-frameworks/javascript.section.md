@@ -331,10 +331,11 @@ mkYarnPackage rec {
   - The `echo 9` steps comes from this answer: <https://stackoverflow.com/a/49139496>
   - Exporting the headers in `npm_config_nodedir` comes from this issue: <https://github.com/nodejs/node-gyp/issues/1191#issuecomment-301243919>
 
-## Outside Nixpkgs {#javascript-outside-nixpkgs}
+## Outside of Nixpkgs {#javascript-outside-nixpkgs}
 
 There are some other tools available, which are written in the Nix language.
-These that can't be used inside Nixpkgs because they require [Import From Derivation](#ssec-import-from-derivation), which is not allowed in Nixpkgs.
+These that can't be used inside Nixpkgs because they require [Import From Derivation](#sec-import-from-derivation), which is not allowed in Nixpkgs.
+Using them in Nixpkgs requires checking the intermediate build results into version control.
 
 If you are packaging something outside Nixpkgs, consider the following:
 

@@ -678,11 +678,11 @@ stdenv.mkDerivation {
 ### Import From Derivation {#ssec-import-from-derivation}
 
 Import From Derivation (IFD) is disallowed in Nixpkgs for performance reasons:
-[Hydra] evaluates the entire package set, and sequential builds during evaluation would increase evaluation times to become impractical.
+[Hydra] evaluates the entire package set, and sequential builds during evalation would increase evaluation times to become impractical.
 
 [Hydra]: https://github.com/NixOS/hydra
 
-Import From Derivation can be worked around in some cases by committing generated intermediate files to version control and reading those instead.
+Import From Derivation can be worked around in some cases by checking light-weight intermediate build results, such as files containing dependency information, into version control and using them like regular sources.
 
 <!-- TODO: remove the following and link to Nix manual once https://github.com/NixOS/nix/pull/7332 is merged -->
 
