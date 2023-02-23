@@ -334,7 +334,7 @@ mkYarnPackage rec {
 ## Outside of Nixpkgs {#javascript-outside-nixpkgs}
 
 There are some other tools available, which are written in the Nix language.
-These that can't be used inside Nixpkgs because they require [Import From Derivation](#sec-import-from-derivation), which is not allowed in Nixpkgs.
+These that can't be used inside Nixpkgs because they require [Import From Derivation](#ssec-import-from-derivation), which is not allowed in Nixpkgs.
 Using them in Nixpkgs requires checking the intermediate build results into version control.
 
 If you are packaging something outside Nixpkgs, consider the following:
