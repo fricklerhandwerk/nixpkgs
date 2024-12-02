@@ -12,6 +12,7 @@
   tesseract4,
   vde2,
   extraPythonPackages ? (_: [ ]),
+  extraDependencies ? [],
   nixosTests,
 }:
 let
@@ -42,7 +43,8 @@ python3Packages.buildPythonApplication {
       junit-xml
       ptpython
     ]
-    ++ extraPythonPackages python3Packages;
+    ++ extraPythonPackages python3Packages
+    ++ extraDependencies;
 
   propagatedBuildInputs =
     [

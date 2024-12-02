@@ -5,7 +5,7 @@ let
   # Reifies and correctly wraps the python test driver for
   # the respective qemu version and with or without ocr support
   testDriver = hostPkgs.callPackage ../test-driver {
-    inherit (config) enableOCR extraPythonPackages;
+    inherit (config) enableOCR extraPythonPackages extraDependencies;
     qemu_pkg = config.qemu.package;
     imagemagick_light = hostPkgs.imagemagick_light.override { inherit (hostPkgs) libtiff; };
     tesseract4 = hostPkgs.tesseract4.override { enableLanguages = [ "eng" ]; };
@@ -149,13 +149,24 @@ in
       description = ''
         Python packages to add to the test driver.
 
-        The argument is a Python package set, similar to `pkgs.pythonPackages`.
+        The argument the function gets passed is a Python package set, similar to `pkgs.pythonPackages`.
       '';
       example = lib.literalExpression ''
         p: [ p.numpy ]
       '';
       type = types.functionTo (types.listOf types.package);
       default = ps: [ ];
+    };
+
+    extraDependencies = mkOption {
+      description = ''
+        Packages to add to the test driver's environment.
+      '';
+      example = lib.literalExpression ''
+        [ pkgs.firefox ]
+      '';
+      type = types.listOf types.package;
+      default = [ ];
     };
 
     extraDriverArgs = mkOption {
