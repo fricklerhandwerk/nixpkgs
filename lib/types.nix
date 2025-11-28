@@ -63,7 +63,6 @@ let
 
   inherit (lib.modules)
     mergeDefinitions
-    fixupOptionType
     mergeOptionDecls
     ;
   inherit (lib.fileset)
@@ -249,8 +248,8 @@ let
         getSubOptions ? prefix: { },
         # List of modules if any, or null if none.
         getSubModules ? null,
-        # Function for building the same option type with a different list of
-        # modules.
+        # Function for building the same option type with a different list of modules.
+        # Used to attach accurate position information to option declarations in submodules, by pushing those declarations down in the type tree.
         substSubModules ? m: null,
         # Function that merge type declarations.
         # internal, takes a functor as argument and returns the merged type.
@@ -1206,7 +1205,7 @@ let
               ) defs;
               # Merges all the types into a single one, including submodule merging.
               # This also propagates file information to all submodules
-              mergedOption = fixupOptionType loc (mergeOptionDecls loc optionModules);
+              mergedOption = mergeOptionDecls loc optionModules;
             in
             mergedOption.type;
       };

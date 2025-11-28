@@ -841,7 +841,7 @@ let
         in
         if length optionDecls == length decls then
           let
-            opt = fixupOptionType loc (mergeOptionDecls loc decls);
+            opt = mergeOptionDecls loc decls;
           in
           {
             matchedOptions = evalOptionValue loc opt defns';
@@ -861,7 +861,7 @@ let
           # All of the above are merely syntax sugar though.
           then
             let
-              opt = fixupOptionType loc (mergeOptionDecls loc (map optionTreeToOption decls));
+              opt = mergeOptionDecls loc (map optionTreeToOption decls);
             in
             {
               matchedOptions = evalOptionValue loc opt defns';
@@ -966,7 +966,7 @@ let
   mergeOptionDecls =
     loc: opts:
     let
-      decl =
+      opt =
         foldl'
           (
             res: opt:
@@ -1059,7 +1059,14 @@ let
           }
           opts;
     in
-    decl;
+    if opt.type.getSubModules or null == null then
+      opt // { type = opt.type or types.unspecified; }
+    else
+      opt
+      // {
+        type = opt.type.substSubModules opt.options;
+        options = [ ];
+      };
 
   /**
     Merge all the definitions of an option to produce the final
@@ -1393,20 +1400,6 @@ let
       compare = a: b: (a.priority or defaultOrderPriority) < (b.priority or defaultOrderPriority);
     in
     sort compare defs';
-
-  # This calls substSubModules, whose entire purpose is only to ensure that
-  # option declarations in submodules have accurate position information.
-  # TODO: Merge this into mergeOptionDecls
-  fixupOptionType =
-    loc: opt:
-    if opt.type.getSubModules or null == null then
-      opt // { type = opt.type or types.unspecified; }
-    else
-      opt
-      // {
-        type = opt.type.substSubModules opt.options;
-        options = [ ];
-      };
 
   /**
     Merge an option's definitions in a way that preserves the priority of the
@@ -2196,7 +2189,6 @@ private
     filterOverrides
     filterOverrides'
     fixMergeModules
-    fixupOptionType # should be private?
     importApply
     importJSON
     importTOML
