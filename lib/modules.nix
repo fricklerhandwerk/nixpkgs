@@ -948,7 +948,7 @@ let
     module to add sub-options to an option declared somewhere else
     (e.g. multiple modules define sub-options for ‘fileSystems’).
 
-    'loc' is the list of attribute names where the option is located.
+    'loc' is the list of attribute names where the 'option' is located.
 
     'opts' is a list of modules.  Each module has an options attribute which
     correspond to the definition of 'loc' in 'opt.file'.
@@ -973,8 +973,6 @@ let
             let
               t = res.type;
               t' = opt.options.type;
-              mergedType = t.typeMerge t'.functor;
-              typesMergeable = mergedType != null;
 
               # TODO: Remove this when all downstream reliances of internals: 'functor.wrapped' are sufficiently migrated.
               # A function that adds the deprecated wrapped message to a type.
@@ -992,6 +990,10 @@ let
               typeSet =
                 if opt.options ? type then
                   if res ? type then
+                    let
+                      mergedType = t.typeMerge t'.functor;
+                      typesMergeable = mergedType != null;
+                    in
                     if typesMergeable then
                       {
                         type =
