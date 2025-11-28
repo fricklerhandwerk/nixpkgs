@@ -965,97 +965,101 @@ let
   */
   mergeOptionDecls =
     loc: opts:
-    foldl'
-      (
-        res: opt:
-        let
-          t = res.type;
-          t' = opt.options.type;
-          mergedType = t.typeMerge t'.functor;
-          typesMergeable = mergedType != null;
+    let
+      decl =
+        foldl'
+          (
+            res: opt:
+            let
+              t = res.type;
+              t' = opt.options.type;
+              mergedType = t.typeMerge t'.functor;
+              typesMergeable = mergedType != null;
 
-          # TODO: Remove this when all downstream reliances of internals: 'functor.wrapped' are sufficiently migrated.
-          # A function that adds the deprecated wrapped message to a type.
-          addDeprecatedWrapped =
-            t:
-            t
-            // {
-              functor = t.functor // {
-                wrapped = t.functor.wrappedDeprecationMessage {
-                  inherit loc;
+              # TODO: Remove this when all downstream reliances of internals: 'functor.wrapped' are sufficiently migrated.
+              # A function that adds the deprecated wrapped message to a type.
+              addDeprecatedWrapped =
+                t:
+                t
+                // {
+                  functor = t.functor // {
+                    wrapped = t.functor.wrappedDeprecationMessage {
+                      inherit loc;
+                    };
+                  };
                 };
-              };
-            };
 
-          typeSet =
-            if opt.options ? type then
-              if res ? type then
-                if typesMergeable then
-                  {
-                    type =
-                      if mergedType ? functor.wrappedDeprecationMessage then
-                        addDeprecatedWrapped mergedType
-                      else
-                        mergedType;
-                  }
+              typeSet =
+                if opt.options ? type then
+                  if res ? type then
+                    if typesMergeable then
+                      {
+                        type =
+                          if mergedType ? functor.wrappedDeprecationMessage then
+                            addDeprecatedWrapped mergedType
+                          else
+                            mergedType;
+                      }
+                    else
+                      # Keep in sync with the same error below!
+                      throw
+                        "The option `${showOption loc}' in `${opt._file}' is already declared in ${showFiles res.declarations}."
+                  else if opt.options.type ? functor.wrappedDeprecationMessage then
+                    { type = addDeprecatedWrapped opt.options.type; }
+                  else
+                    { }
                 else
-                  # Keep in sync with the same error below!
-                  throw
-                    "The option `${showOption loc}' in `${opt._file}' is already declared in ${showFiles res.declarations}."
-              else if opt.options.type ? functor.wrappedDeprecationMessage then
-                { type = addDeprecatedWrapped opt.options.type; }
-              else
-                { }
+                  { };
+
+              bothHave = k: opt.options ? ${k} && res ? ${k};
+            in
+            if bothHave "default" || bothHave "example" || bothHave "description" || bothHave "apply" then
+              # Keep in sync with the same error above!
+              throw
+                "The option `${showOption loc}' in `${opt._file}' is already declared in ${showFiles res.declarations}."
             else
-              { };
-
-          bothHave = k: opt.options ? ${k} && res ? ${k};
-        in
-        if bothHave "default" || bothHave "example" || bothHave "description" || bothHave "apply" then
-          # Keep in sync with the same error above!
-          throw
-            "The option `${showOption loc}' in `${opt._file}' is already declared in ${showFiles res.declarations}."
-        else
-          let
-            getSubModules = opt.options.type.getSubModules or null;
-            submodules =
-              if getSubModules != null then
-                map (setDefaultModuleLocation opt._file) getSubModules ++ res.options
-              else
-                res.options;
-          in
-          opt.options
-          // res
-          // {
-            declarations = res.declarations ++ [ opt._file ];
-            # In the case of modules that are generated dynamically, we won't
-            # have exact declaration lines; fall back to just the file being
-            # evaluated.
-            declarationPositions =
-              res.declarationPositions
-              ++ (
-                if opt.pos != null then
-                  [ opt.pos ]
-                else
-                  [
-                    {
-                      file = opt._file;
-                      line = null;
-                      column = null;
-                    }
-                  ]
-              );
-            options = submodules;
+              let
+                getSubModules = opt.options.type.getSubModules or null;
+                submodules =
+                  if getSubModules != null then
+                    map (setDefaultModuleLocation opt._file) getSubModules ++ res.options
+                  else
+                    res.options;
+              in
+              opt.options
+              // res
+              // {
+                declarations = res.declarations ++ [ opt._file ];
+                # In the case of modules that are generated dynamically, we won't
+                # have exact declaration lines; fall back to just the file being
+                # evaluated.
+                declarationPositions =
+                  res.declarationPositions
+                  ++ (
+                    if opt.pos != null then
+                      [ opt.pos ]
+                    else
+                      [
+                        {
+                          file = opt._file;
+                          line = null;
+                          column = null;
+                        }
+                      ]
+                  );
+                options = submodules;
+              }
+              // typeSet
+          )
+          {
+            inherit loc;
+            declarations = [ ];
+            declarationPositions = [ ];
+            options = [ ];
           }
-          // typeSet
-      )
-      {
-        inherit loc;
-        declarations = [ ];
-        declarationPositions = [ ];
-        options = [ ];
-      }
-      opts;
+          opts;
+    in
+    decl;
 
   /**
     Merge all the definitions of an option to produce the final
