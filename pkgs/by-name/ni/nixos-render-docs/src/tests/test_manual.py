@@ -389,6 +389,47 @@ def test_nested_chunk_has_relative_hrefs(tmp_path: Path) -> None:
     assert 'href="../index.html"' in chunk
 
 
+def test_sibling_chunks_cross_link_in_sidebar(tmp_path: Path) -> None:
+    (tmp_path / "chapter_a.md").write_text(
+        "# Chapter A {#chap-a}\n\n"
+        "Body A.\n"
+    )
+    (tmp_path / "chapter_b.md").write_text(
+        "# Chapter B {#chap-b}\n\n"
+        "Body B.\n"
+    )
+    (tmp_path / "index.md").write_text(
+        "# Test manual {#book-test}\n\n"
+        "## Version 1\n\n"
+        "```{=include=} chapters html:into-file=//section-a/index.html\n"
+        "chapter_a.md\n"
+        "```\n"
+        "```{=include=} chapters html:into-file=//section-b/index.html\n"
+        "chapter_b.md\n"
+        "```\n"
+    )
+    out = tmp_path / "out"
+    out.mkdir(exist_ok=True)
+    conv = HTMLConverter(
+        "1.0.0",
+        HTMLParameters(
+            generator="test-gen",
+            stylesheets=[],
+            scripts=[],
+            sidebar_depth=3,
+            media_dir=Path("media"),
+        ),
+        {},
+    )
+    conv.convert(infile=tmp_path / "index.md", outfile=out / "index.html")
+
+    chunk_a = (out / "section-a" / "index.html").read_text()
+    chunk_b = (out / "section-b" / "index.html").read_text()
+
+    assert 'href="../section-b/index.html"' in chunk_a
+    assert 'href="../section-a/index.html"' in chunk_b
+
+
 def test_config_malformed_node_fails(tmp_path: Path) -> None:
     with pytest.raises(RuntimeError) as excinfo:
         _render_with_config(
