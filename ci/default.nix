@@ -68,6 +68,12 @@ rec {
   nixpkgs-vet = pkgs.callPackage ./nixpkgs-vet.nix {
     nix = pkgs.nixVersions.latest;
   };
+  redirects-nixpkgs = pkgs.callPackage ./redirects-check.nix {
+    redirectsFile = "doc/redirects.json";
+  };
+  redirects-nixos = pkgs.callPackage ./redirects-check.nix {
+    redirectsFile = "nixos/doc/manual/redirects.json";
+  };
   parse = pkgs.lib.recurseIntoAttrs {
     nix_latest = pkgs.callPackage ./parse.nix { nix = pkgs.nixVersions.latest; };
     stable = pkgs.callPackage ./parse.nix { nix = pkgs.nixVersions.stable; };
