@@ -2,6 +2,7 @@ import argparse
 import hashlib
 import html
 import json
+import os
 import re
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
@@ -289,6 +290,7 @@ class ManualHTMLRenderer(RendererMixin, HTMLRenderer):
         self._html_params = html_params
         self._redirects = redirects
         self._sidebar_open = sidebar_open
+        self._current_out_path = "index.html"
 
     def _pull_image(self, src: str) -> str:
         src_path = Path(src)
@@ -304,12 +306,18 @@ class ManualHTMLRenderer(RendererMixin, HTMLRenderer):
         return f"./{self._html_params.media_dir}/{target_name}"
 
     def _push(self, tag: str) -> Any:
-        result = (self._toplevel_tag, self._headings, self._attrspans, self._in_dir)
+        result = (self._toplevel_tag, self._headings, self._attrspans, self._in_dir, self._current_out_path)
         self._toplevel_tag, self._headings, self._attrspans = tag, [], []
         return result
 
     def _pop(self, state: Any) -> None:
-        (self._toplevel_tag, self._headings, self._attrspans, self._in_dir) = state
+        (self._toplevel_tag, self._headings, self._attrspans, self._in_dir, self._current_out_path) = state
+
+    def href(self, target: XrefTarget) -> str:
+        current_dir = os.path.dirname(self._current_out_path) or "."
+        rel = os.path.relpath(target.path, current_dir)
+        path = "" if target.drop_target else html.escape(rel, True)
+        return path if target.drop_fragment else f"{path}#{html.escape(target.id, True)}"
 
     def _render_book(self, tokens: Sequence[Token]) -> str:
         assert tokens[4].children
@@ -340,19 +348,19 @@ class ManualHTMLRenderer(RendererMixin, HTMLRenderer):
         nav_html = ""
         home = toc.root
         if toc.prev:
-            prev_link = f'<link rel="prev" href="{toc.prev.target.href()}" title="{toc.prev.target.title}" />'
-            prev_a = f'<a accesskey="p" href="{toc.prev.target.href()}">Prev</a>'
+            prev_link = f'<link rel="prev" href="{self.href(toc.prev.target)}" title="{toc.prev.target.title}" />'
+            prev_a = f'<a accesskey="p" href="{self.href(toc.prev.target)}">Prev</a>'
         if toc.parent:
             up_link = (
-                f'<link rel="up" href="{toc.parent.target.href()}" '
+                f'<link rel="up" href="{self.href(toc.parent.target)}" '
                 f'title="{toc.parent.target.title}" />'
             )
             if (part := toc.parent) and part.kind != 'book':
                 assert part.target.title
                 parent_title = part.target.title
         if toc.next:
-            next_link = f'<link rel="next" href="{toc.next.target.href()}" title="{toc.next.target.title}" />'
-            next_a = f'<a accesskey="n" href="{toc.next.target.href()}">Next</a>'
+            next_link = f'<link rel="next" href="{self.href(toc.next.target)}" title="{toc.next.target.title}" />'
+            next_a = f'<a accesskey="n" href="{self.href(toc.next.target)}">Next</a>'
         # nav_header is not disabled
         if not self._html_params.no_navheader and (toc.prev or toc.parent or toc.next):
             nav_html = "\n".join([
@@ -474,7 +482,7 @@ document.addEventListener("DOMContentLoaded", createObserver);
             f"<script>{close_menu_js}</script>",
             f"<script>{intersection_observer_js}</script>",
             f' <meta name="generator" content="{html.escape(self._html_params.generator, True)}" />',
-            f' <link rel="home" href="{home.target.href()}" title="{home.target.title}" />' if home.target.href() else "",
+            f' <link rel="home" href="{self.href(home.target)}" title="{home.target.title}" />' if self.href(home.target) else "",
             f' {up_link}{prev_link}{next_link}',
             ' </head>',
             ' <body>',
@@ -496,15 +504,15 @@ document.addEventListener("DOMContentLoaded", createObserver);
         nav_html = ""
         home = toc.root
         if toc.prev:
-            prev_a = f'<a accesskey="p" href="{toc.prev.target.href()}">Prev</a>'
+            prev_a = f'<a accesskey="p" href="{self.href(toc.prev.target)}">Prev</a>'
             assert toc.prev.target.title
             prev_text = toc.prev.target.title
         if toc.parent:
-            home_a = f'<a accesskey="h" href="{home.target.href()}">Home</a>'
+            home_a = f'<a accesskey="h" href="{self.href(home.target)}">Home</a>'
             if toc.parent != home:
-                up_a = f'<a accesskey="u" href="{toc.parent.target.href()}">Up</a>'
+                up_a = f'<a accesskey="u" href="{self.href(toc.parent.target)}">Up</a>'
         if toc.next:
-            next_a = f'<a accesskey="n" href="{toc.next.target.href()}">Next</a>'
+            next_a = f'<a accesskey="n" href="{self.href(toc.next.target)}">Next</a>'
             assert toc.next.target.title
             next_text = toc.next.target.title
         if toc.prev or toc.parent or toc.next:
@@ -546,7 +554,7 @@ document.addEventListener("DOMContentLoaded", createObserver);
                 child_budget = budget if e.kind == 'part' else budget - 1
                 children = (render_entries(e.children, child_budget)
                             if e.children and child_budget > 0 else "")
-                link = f'<a href="{e.target.href()}">{e.target.toc_html}</a>'
+                link = f'<a href="{self.href(e.target)}">{e.target.toc_html}</a>'
                 cls = html.escape(e.kind, True)
                 if children:
                     # a group without an 'id' in the config gets open_id "".
@@ -565,7 +573,7 @@ document.addEventListener("DOMContentLoaded", createObserver);
             if not lst:
                 return ""
             entries = "".join(
-                f'<li><a href="{e.target.href()}">{e.target.toc_html}</a></li>'
+                f'<li><a href="{self.href(e.target)}">{e.target.toc_html}</a></li>'
                 for e in lst
             )
             return (
@@ -589,6 +597,7 @@ document.addEventListener("DOMContentLoaded", createObserver);
         fragments = token.meta['included']
         state = self._push(tag)
         if into:
+            self._current_out_path = into
             toc = TocEntry.of(fragments[0][0][0])
             # chunk pages carry the same whole-book sidebar as the main page.
             inner.append(self._file_header(toc, sidebar=self._build_sidebar(toc)))
@@ -603,7 +612,9 @@ document.addEventListener("DOMContentLoaded", createObserver);
                 raise RuntimeError(f"rendering {path}") from e
         if into:
             inner.append(self._file_footer(toc))
-            (self._base_path / into).write_text("".join(inner))
+            out_file = self._base_path / into
+            out_file.parent.mkdir(parents=True, exist_ok=True)
+            out_file.write_text("".join(inner))
         self._pop(state)
         return "".join(outer)
 
@@ -783,10 +794,10 @@ class HTMLConverter(BaseConverter[ManualHTMLRenderer]):
                 )
             # we use blender-style //path to denote paths relative to the origin file
             # (usually index.html). this makes everything a lot easier and clearer.
-            if not into.startswith("//") or '/' in into[2:]:
+            if not into.startswith("//"):
                 raise SrcError(
                     src=src,
-                    description=f"html:into-file must be a relative-to-origin //filename: {into}",
+                    description=f"html:into-file must be a relative-to-origin path starting with //: {into}",
                     token=token,
                 )
             into = token.meta['include-args']['into-file'] = into[2:]

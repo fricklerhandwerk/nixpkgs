@@ -36,6 +36,9 @@ class HTMLRenderer(Renderer):
         self._attrspans = []
         self._xref_targets = xref_targets
 
+    def href(self, target: XrefTarget) -> str:
+        return target.href()
+
     def render(self, tokens: Sequence[Token]) -> str:
         result = super().render(tokens)
         result += self._close_headings(None)
@@ -69,7 +72,7 @@ class HTMLRenderer(Renderer):
             if xref.title:
                 # titles are not attribute-safe on their own, so we need to replace quotes.
                 title = 'title="{}"'.format(xref.title.replace('"', '&quot;'))
-            target, href = "", xref.href()
+            target, href = "", self.href(xref)
         return f'<a class="{tag}" href="{href}" {title} {target}>{text}'
     def link_close(self, token: Token, tokens: Sequence[Token], i: int) -> str:
         return "</a>"
@@ -293,7 +296,7 @@ class HTMLRenderer(Renderer):
     def td_close(self, token: Token, tokens: Sequence[Token], i: int) -> str:
         return "</td>"
     def footnote_ref(self, token: Token, tokens: Sequence[Token], i: int) -> str:
-        href = self._xref_targets[token.meta['target']].href()
+        href = self.href(self._xref_targets[token.meta['target']])
         id = escape(cast(str, token.attrs["id"]), True)
         return (
             f'<a href="{href}" class="footnote" id="{id}">'
@@ -315,7 +318,7 @@ class HTMLRenderer(Renderer):
     def footnote_close(self, token: Token, tokens: Sequence[Token], i: int) -> str:
         return "</div>"
     def footnote_anchor(self, token: Token, tokens: Sequence[Token], i: int) -> str:
-        href = self._xref_targets[token.meta['target']].href()
+        href = self.href(self._xref_targets[token.meta['target']])
         return (
             f'<a href="{href}" class="para">'
             f'<sup class="para">[{token.meta["id"] + 1}]</sup>'

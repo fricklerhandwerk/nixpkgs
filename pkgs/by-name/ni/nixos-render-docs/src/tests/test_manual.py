@@ -355,6 +355,40 @@ def test_config_duplicate_id_fails(tmp_path: Path) -> None:
     assert "duplicate id" in str(excinfo.value.__cause__)
 
 
+def test_nested_chunk_has_relative_hrefs(tmp_path: Path) -> None:
+    (tmp_path / "chapter.md").write_text(
+        "# Installation {#chap-install}\n\n"
+        "Body.\n"
+    )
+    (tmp_path / "index.md").write_text(
+        "# Test manual {#book-test}\n\n"
+        "## Version 1\n\n"
+        "```{=include=} chapters html:into-file=//installation/chapter.html\n"
+        "chapter.md\n"
+        "```\n"
+    )
+    out = tmp_path / "out"
+    out.mkdir(exist_ok=True)
+    conv = HTMLConverter(
+        "1.0.0",
+        HTMLParameters(
+            generator="test-gen",
+            stylesheets=[],
+            scripts=[],
+            sidebar_depth=3,
+            media_dir=Path("media"),
+        ),
+        {},
+    )
+    conv.convert(infile=tmp_path / "index.md", outfile=out / "index.html")
+
+    index = (out / "index.html").read_text()
+    chunk = (out / "installation" / "chapter.html").read_text()
+
+    assert 'href="installation/chapter.html"' in index
+    assert 'href="../index.html"' in chunk
+
+
 def test_config_malformed_node_fails(tmp_path: Path) -> None:
     with pytest.raises(RuntimeError) as excinfo:
         _render_with_config(
