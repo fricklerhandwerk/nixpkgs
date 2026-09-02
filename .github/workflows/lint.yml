@@ -111,6 +111,14 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN_GHA }}
           pushFilter: -source$
 
+      - name: Check Nixpkgs manual redirect URLs are preserved
+        run: |
+          nix-build nixpkgs/untrusted/ci --arg nixpkgs ./nixpkgs/untrusted-pinned -A redirects-nixpkgs --arg base "./nixpkgs/trusted" --arg head "./nixpkgs/untrusted"
+
+      - name: Check NixOS manual redirect URLs are preserved
+        run: |
+          nix-build nixpkgs/untrusted/ci --arg nixpkgs ./nixpkgs/untrusted-pinned -A redirects-nixos --arg base "./nixpkgs/trusted" --arg head "./nixpkgs/untrusted"
+
       - name: Running nixpkgs-vet
         env:
           # Force terminal colors to be enabled. The library that `nixpkgs-vet` uses respects https://bixense.com/clicolors/
