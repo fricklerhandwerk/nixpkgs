@@ -86,7 +86,7 @@ jobs:
           # Tests multiple versions at once, let's make sure all of them run, so keep-going.
           nix-build nixpkgs/untrusted/ci --arg nixpkgs ./nixpkgs/untrusted-pinned -A parse --keep-going
 
-  nixpkgs-vet:
+  structural-checks:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 10
     steps:
