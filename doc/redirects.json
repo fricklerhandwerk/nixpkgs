@@ -48,8 +48,7 @@
     "index.html#cuda-extending-cuda-package-sets"
   ],
   "cuda-modifying-cuda-package-sets": [
-    "index.html#cuda-modifying-cuda-package-sets",
-    "index.html#cuda-configuring-cuda-package-sets"
+    "index.html#cuda-modifying-cuda-package-sets"
   ],
   "cuda-nixpkgs-cuda-variants": [
     "index.html#cuda-nixpkgs-cuda-variants"
